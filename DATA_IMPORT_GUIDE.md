@@ -4,6 +4,7 @@
 
 ### 1. 登录 Supabase
 - 访问 https://supabase.com/dashboard
+
 - 登录你的账号
 - 选择你的项目: `cxadfohdcpwiqdhtjlmr`
 
