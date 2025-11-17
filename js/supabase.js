@@ -1,12 +1,37 @@
 // Supabase 配置
 import { createClient } from 'https://esm.sh/@supabase/supabase-js'
 
-// 你的 Supabase 项目配置
-const supabaseUrl = 'https://cxadfohdcpwiqdhtjlmr.supabase.co'
-const supabaseKey = 'sb_secret_5x6SKHwftPSvM-0OpAIwjg_muflJsMf'
+// 从环境变量获取 Supabase 项目配置
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://cxadfohdcpwiqdhtjlmr.supabase.co'
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_secret_5x6SKHwftPSvM-0OpAIwjg_muflJsMf'
+
+// 验证配置
+if (!supabaseUrl || !supabaseKey) {
+    console.error('Supabase 配置错误: URL 或 API Key 为空')
+    throw new Error('Supabase 配置错误')
+}
 
 // 创建 Supabase 客户端
 export const supabase = createClient(supabaseUrl, supabaseKey)
+
+// 测试连接
+async function testConnection() {
+    try {
+        const { error } = await supabase.from('singers').select('*').limit(1)
+        if (error) {
+            console.error('Supabase 连接测试失败:', error)
+            return false
+        }
+        console.log('Supabase 连接测试成功')
+        return true
+    } catch (error) {
+        console.error('Supabase 连接测试异常:', error)
+        return false
+    }
+}
+
+// 导出连接测试函数
+export { testConnection }
 
 // 数据库表名常量
 export const TABLES = {

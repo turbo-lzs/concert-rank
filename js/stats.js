@@ -1,5 +1,5 @@
 // 统计分析页面逻辑
-import { supabase, TABLES } from './supabase.js'
+import { supabase, TABLES, testConnection } from './supabase.js'
 
 // 全局变量
 let concertsData = []
@@ -20,6 +20,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('统计分析页面初始化...')
     
     try {
+        // 测试数据库连接
+        console.log('测试数据库连接...')
+        const connectionSuccess = await testConnection()
+        
+        if (!connectionSuccess) {
+            showError('数据库连接失败，请检查网络连接和Supabase配置')
+            return
+        }
+        
+        console.log('数据库连接成功，开始加载数据...')
+        
         // 加载所有数据
         await loadAllData()
         
@@ -35,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('统计分析页面初始化完成')
     } catch (error) {
         console.error('统计分析页面初始化错误:', error)
-        showError('数据加载失败，请刷新页面重试')
+        showError('数据加载失败，请检查控制台查看详细错误信息')
     }
 })
 
@@ -472,9 +483,14 @@ function showError(message) {
     alertDiv.innerHTML = `
         <i class="fas fa-exclamation-triangle me-2"></i>
         ${message}
+        <br><small>如果问题持续存在，请检查 Supabase 项目配置是否正确</small>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `
     container.insertBefore(alertDiv, container.firstChild)
+    
+    // 隐藏加载动画
+    const loadingElements = document.querySelectorAll('.loading')
+    loadingElements.forEach(el => el.style.display = 'none')
 }
 
 // 实时更新数据（可选功能）
