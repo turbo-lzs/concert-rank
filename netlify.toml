@@ -5,7 +5,38 @@
 [build.environment]
   NODE_VERSION = "18"
 
+# 头部设置，确保正确的内容类型
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+
+# 允许直接访问静态文件
 [[redirects]]
-  from = "/*"
+  from = "/assets/*"
+  to = "/assets/:splat"
+  status = 200
+
+# 确保主要页面可以正常访问
+[[redirects]]
+  from = "/index.html"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/vote.html"
+  to = "/vote.html"
+  status = 200
+
+[[redirects]]
+  from = "/stats.html"
+  to = "/stats.html"
+  status = 200
+
+# 处理根路径
+[[redirects]]
+  from = "/"
   to = "/index.html"
   status = 200
