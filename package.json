@@ -1,0 +1,17 @@
+{
+  "name": "concert-vote",
+  "version": "1.0.0",
+  "description": "演唱会粉丝投票与人气排名平台",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": ["supabase", "netlify", "vote", "concert"],
+  "author": "Student",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^4.4.0"
+  }
+}
