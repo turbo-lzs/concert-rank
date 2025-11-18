@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript模块测试</title>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>JavaScript模块导入测试</h1>
+        <div id="test-results">
+            <p>正在测试JavaScript模块...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+        
+        document.getElementById('test-results').innerHTML = `
+            <div class="alert alert-success">
+                <h4>✅ 模块导入成功！</h4>
+                <p>createClient 函数已正确导入</p>
+            </div>
+        `
+        
+        console.log('模块导入测试成功，createClient可用:', typeof createClient)
+    </script>
+</body>
+</html>
