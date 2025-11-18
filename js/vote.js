@@ -1,11 +1,11 @@
-// 投票页面逻辑
+// 投票页面逻辑 - 修复版本
 import { supabase, TABLES, testConnection } from './supabase.js'
 
 // 全局变量
 let concertsData = []
 let singersData = []
 let votesData = []
-let selectedRatings = {} // 存储用户选择的评分
+let selectedRatings = {}
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', async () => {
@@ -42,6 +42,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 // 加载所有数据
 async function loadAllData() {
     try {
+        console.log('开始加载数据...')
+        
         // 加载歌手数据
         const { data: singers, error: singersError } = await supabase
             .from(TABLES.SINGERS)
@@ -50,6 +52,7 @@ async function loadAllData() {
         
         if (singersError) throw singersError
         singersData = singers || []
+        console.log(`加载了 ${singersData.length} 个歌手`)
         
         // 加载演唱会数据（包含歌手信息）
         const { data: concerts, error: concertsError } = await supabase
@@ -59,14 +62,16 @@ async function loadAllData() {
         
         if (concertsError) throw concertsError
         concertsData = concerts || []
+        console.log(`加载了 ${concertsData.length} 个演唱会`)
         
-        // 加载投票数据（用于检查是否已投票）
+        // 加载投票数据
         const { data: votes, error: votesError } = await supabase
             .from(TABLES.VOTES)
             .select('*')
         
         if (votesError) throw votesError
         votesData = votes || []
+        console.log(`加载了 ${votesData.length} 个投票记录`)
         
     } catch (error) {
         console.error('加载数据错误:', error)
@@ -77,6 +82,11 @@ async function loadAllData() {
 // 加载歌手筛选器选项
 function loadSingerFilterOptions() {
     const singerFilter = document.getElementById('singerFilter')
+    
+    if (!singerFilter) {
+        console.error('找不到歌手筛选器元素')
+        return
+    }
     
     // 清空现有选项（保留"全部歌手"）
     singerFilter.innerHTML = '<option value="">全部歌手</option>'
@@ -92,15 +102,21 @@ function loadSingerFilterOptions() {
 
 // 应用筛选器
 window.applyFilters = function() {
-    const singerId = document.getElementById('singerFilter').value
-    const genre = document.getElementById('genreFilter').value
+    const singerId = document.getElementById('singerFilter')?.value || ''
+    const genre = document.getElementById('genreFilter')?.value || ''
     
+    console.log('应用筛选:', { singerId, genre })
     renderConcerts(singerId, genre)
 }
 
 // 渲染演唱会列表
 function renderConcerts(singerId = '', genre = '') {
     const concertsListContainer = document.getElementById('concertsList')
+    
+    if (!concertsListContainer) {
+        console.error('找不到演唱会列表容器')
+        return
+    }
     
     // 筛选演唱会
     let filteredConcerts = concertsData
@@ -170,20 +186,7 @@ function renderConcerts(singerId = '', genre = '') {
                             <div class="mt-3">
                                 <label class="form-label">请评分：</label>
                                 <div class="rating-stars">
-                                    ${[1, 2, 3, 4, 5].map(rating => {
-                                        const isActive = selectedRatings[concert.id] === rating || userRating === rating
-                                        const isDisabled = hasVoted
-                                        return `
-                                            <button type="button" 
-                                                    class="rating-btn ${isActive ? 'active' : ''}" 
-                                                    ${isDisabled ? 'disabled' : ''}
-                                                    onclick="selectRating(${concert.id}, ${rating})"
-                                                    data-rating="${rating}">
-                                                ${rating}分<br>
-                                                <small>${getRatingLabel(rating)}</small>
-                                            </button>
-                                        `
-                                    }).join('')}
+                                    ${createRatingButtons(concert.id, hasVoted, userRating)}
                                 </div>
                             </div>
                         </div>
@@ -191,19 +194,7 @@ function renderConcerts(singerId = '', genre = '') {
                         <!-- 投票按钮和统计 -->
                         <div class="col-md-3 d-flex flex-column justify-content-between">
                             <div>
-                                <button class="btn btn-primary w-100 mb-2" 
-                                        id="voteBtn${concert.id}"
-                                        onclick="submitVote(${concert.id})"
-                                        ${hasVoted ? 'disabled' : ''}>
-                                    ${hasVoted ? '已投票' : '确认投票'}
-                                </button>
-                                
-                                ${hasVoted ? `
-                                    <div class="text-center text-success">
-                                        <i class="fas fa-check-circle me-1"></i>
-                                        <small>您已投 ${userRating} 分</small>
-                                    </div>
-                                ` : ''}
+                                ${createVoteButton(concert.id, hasVoted, userRating)}
                             </div>
                             
                             <!-- 演唱会统计 -->
@@ -224,6 +215,46 @@ function renderConcerts(singerId = '', genre = '') {
             </div>
         `
     }).join('')
+}
+
+// 创建评分按钮
+function createRatingButtons(concertId, hasVoted, userRating) {
+    let buttons = ''
+    for (let rating = 1; rating <= 5; rating++) {
+        const isActive = selectedRatings[concertId] === rating || userRating === rating
+        const isDisabled = hasVoted
+        
+        buttons += `<button type="button" 
+                   class="rating-btn ${isActive ? 'active' : ''}" 
+                   ${isDisabled ? 'disabled' : ''}
+                   onclick="selectRating(${concertId}, ${rating})"
+                   data-rating="${rating}">
+                   ${rating}分<br>
+                   <small>${getRatingLabel(rating)}</small>
+                   </button>`
+    }
+    return buttons
+}
+
+// 创建投票按钮
+function createVoteButton(concertId, hasVoted, userRating) {
+    let buttonHtml = `
+        <button class="btn btn-primary w-100 mb-2" 
+                id="voteBtn${concertId}"
+                onclick="submitVote(${concertId})"
+                ${hasVoted ? 'disabled' : ''}>
+            ${hasVoted ? '已投票' : '确认投票'}
+        </button>`
+    
+    if (hasVoted) {
+        buttonHtml += `
+            <div class="text-center text-success">
+                <i class="fas fa-check-circle me-1"></i>
+                <small>您已投 ${userRating} 分</small>
+            </div>`
+    }
+    
+    return buttonHtml
 }
 
 // 格式化日期
@@ -250,6 +281,8 @@ function getRatingLabel(rating) {
 
 // 选择评分
 window.selectRating = function(concertId, rating) {
+    console.log('选择评分:', concertId, rating)
+    
     if (checkHasVoted(concertId)) {
         showAlert('warning', '您已给这场演唱会投过票啦！')
         return
@@ -258,18 +291,13 @@ window.selectRating = function(concertId, rating) {
     selectedRatings[concertId] = rating
     
     // 更新按钮状态
-    const voteBtn = document.getElementById(`voteBtn${concertId}`)
+    const voteBtn = document.getElementById('voteBtn' + concertId)
     if (voteBtn) {
         voteBtn.disabled = false
     }
     
-    // 更新评分按钮样式
-    document.querySelectorAll(`button[onclick*="selectRating(${concertId}"]`).forEach(btn => {
-        btn.classList.remove('active')
-        if (btn.dataset.rating == rating) {
-            btn.classList.add('active')
-        }
-    })
+    // 重新渲染以更新样式
+    renderConcerts()
 }
 
 // 提交投票
@@ -287,51 +315,96 @@ window.submitVote = async function(concertId) {
     }
     
     try {
-        // 使用匿名投票（不记录用户信息）
-        const { error } = await supabase
+        // 禁用投票按钮
+        const voteBtn = document.getElementById('voteBtn' + concertId)
+        if (voteBtn) {
+            voteBtn.disabled = true
+            voteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>提交中...'
+        }
+        
+        // 提交到数据库
+        const { data, error } = await supabase
             .from(TABLES.VOTES)
             .insert([{
                 concert_id: concertId,
                 rating: rating,
                 vote_time: new Date().toISOString()
             }])
+            .select()
         
         if (error) throw error
         
-        // 记录投票状态到本地存储
+        // 记录投票状态
         localStorage.setItem(`voted_concert_${concertId}`, 'true')
+        localStorage.setItem(`voted_rating_${concertId}`, rating.toString())
         
-        // 添加到投票数据中
+        // 添加到本地数据
         votesData.push({
+            id: data[0].id,
             concert_id: concertId,
             rating: rating
         })
         
         // 显示成功消息
-        showAlert('success', '投票成功！感谢您的参与～')
+        showAlert('success', `投票成功！您给了 ${rating} 分，感谢您的参与～`)
         
-        // 更新页面状态
+        // 重新加载数据并刷新页面
+        await loadAllData()
         renderConcerts()
         
     } catch (error) {
         console.error('投票失败:', error)
-        showAlert('danger', '投票失败，请稍后重试')
+        showAlert('danger', '投票失败：' + error.message)
+        
+        // 恢复按钮状态
+        const voteBtn = document.getElementById('voteBtn' + concertId)
+        if (voteBtn) {
+            voteBtn.disabled = false
+            voteBtn.innerHTML = '确认投票'
+        }
+    }
+}
+
+// 刷新数据
+window.refreshData = async function() {
+    try {
+        showAlert('info', '正在刷新数据...')
+        
+        // 清除本地存储
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('voted_concert_') || key.startsWith('voted_rating_')) {
+                localStorage.removeItem(key)
+            }
+        })
+        
+        // 重新加载数据
+        await loadAllData()
+        loadSingerFilterOptions()
+        renderConcerts()
+        
+        showAlert('success', '数据刷新成功！')
+        
+    } catch (error) {
+        console.error('刷新数据失败:', error)
+        showAlert('danger', '数据刷新失败，请稍后重试')
     }
 }
 
 // 检查是否已投票
 function checkHasVoted(concertId) {
-    // 检查本地存储
-    if (localStorage.getItem(`voted_concert_${concertId}`)) {
+    const hasVoted = localStorage.getItem(`voted_concert_${concertId}`)
+    if (hasVoted) {
         return true
     }
-    
-    // 检查投票数据（双重保险）
     return votesData.some(vote => vote.concert_id === concertId)
 }
 
 // 获取已投票的评分
 function getVotedRating(concertId) {
+    const localRating = localStorage.getItem(`voted_rating_${concertId}`)
+    if (localRating) {
+        return parseInt(localRating)
+    }
     const vote = votesData.find(vote => vote.concert_id === concertId)
     return vote ? vote.rating : null
 }
@@ -355,6 +428,11 @@ function showAlert(type, message) {
     const alertDiv = document.getElementById('voteAlert')
     const alertMessage = document.getElementById('alertMessage')
     
+    if (!alertDiv || !alertMessage) {
+        console.error('找不到提示元素')
+        return
+    }
+    
     alertDiv.className = `alert alert-${type}`
     alertMessage.textContent = message
     alertDiv.style.display = 'block'
@@ -368,6 +446,8 @@ function showAlert(type, message) {
 // 显示错误信息
 function showError(message) {
     const container = document.querySelector('.container')
+    if (!container) return
+    
     const alertDiv = document.createElement('div')
     alertDiv.className = 'alert alert-danger alert-dismissible fade show'
     alertDiv.innerHTML = `

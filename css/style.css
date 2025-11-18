@@ -318,6 +318,11 @@ body {
   color: white;
 }
 
+.alert-info {
+  background: linear-gradient(135deg, #17a2b8, #007bff);
+  color: white;
+}
+
 /* 页脚样式 */
 .footer {
   background: #343a40;

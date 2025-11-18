@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 测试数据库连接
         console.log('测试数据库连接...')
         const connectionSuccess = await testConnection()
+        console.log('连接测试结果:', connectionSuccess)
         
         if (!connectionSuccess) {
             showError('数据库连接失败，请检查网络连接和Supabase配置')
@@ -40,7 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('首页初始化完成')
     } catch (error) {
         console.error('首页初始化错误:', error)
-        showError('数据加载失败，请检查控制台查看详细错误信息')
+        showError('数据加载失败，请检查控制台查看详细错误信息', error)
     }
 })
 
@@ -230,13 +231,23 @@ window.goToSingerRanking = function(singerId) {
 }
 
 // 显示错误信息
-function showError(message) {
+function showError(message, error = null) {
     const container = document.querySelector('.container')
     const alertDiv = document.createElement('div')
     alertDiv.className = 'alert alert-danger alert-dismissible fade show'
+    
+    let errorDetails = ''
+    if (error) {
+        errorDetails = `
+            <br><small><strong>错误详情:</strong></small>
+            <br><small>${error.message || JSON.stringify(error)}</small>
+        `
+    }
+    
     alertDiv.innerHTML = `
         <i class="fas fa-exclamation-triangle me-2"></i>
         ${message}
+        ${errorDetails}
         <br><small>如果问题持续存在，请检查 Supabase 项目配置是否正确</small>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `

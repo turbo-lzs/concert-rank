@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据库连接测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        .info { background: #e3f2fd; color: #1565c0; }
+    </style>
+</head>
+<body>
+    <h1>数据库连接测试</h1>
+    <button onclick="testConnection()">测试连接</button>
+    <button onclick="testSingers()">测试歌手数据</button>
+    <button onclick="testConcerts()">测试演唱会数据</button>
+    <div id="logs"></div>
+
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js'
+
+        const supabaseUrl = 'https://cxadfohdcpwiqdhtjlmr.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4YWRmb2hkY3B3aXFkaHRqbG1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMDQxODQsImV4cCI6MjA3ODY4MDE4NH0.lJ_LQsjQrBadgG6wnqa-CqC22DCx75AKOlMdJ5HR7o4'
+
+        const supabase = createClient(supabaseUrl, supabaseKey)
+
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs')
+            const div = document.createElement('div')
+            div.className = `log ${type}`
+            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`
+            logs.appendChild(div)
+            console.log(message)
+        }
+
+        const testConnection = async function() {
+            log('开始测试数据库连接...', 'info')
+            try {
+                log(`URL: ${supabaseUrl}`, 'info')
+                log(`Key: ${supabaseKey.substring(0, 20)}...`, 'info')
+                
+                const { data, error } = await supabase.from('singers').select('*').limit(1)
+                
+                if (error) {
+                    log(`连接失败: ${error.message}`, 'error')
+                    log(`错误详情: ${JSON.stringify(error)}`, 'error')
+                } else {
+                    log('连接成功！', 'success')
+                    log(`返回数据: ${JSON.stringify(data)}`, 'success')
+                }
+            } catch (err) {
+                log(`异常: ${err.message}`, 'error')
+                log(`异常类型: ${err.constructor.name}`, 'error')
+            }
+        }
+
+        // 确保函数在全局作用域可用
+        window.testConnection = testConnection
+
+        const testSingers = async function() {
+            log('测试获取歌手数据...', 'info')
+            try {
+                const { data, error } = await supabase.from('singers').select('*')
+                
+                if (error) {
+                    log(`获取歌手数据失败: ${error.message}`, 'error')
+                } else {
+                    log(`获取到 ${data.length} 条歌手数据`, 'success')
+                    data.forEach(singer => {
+                        log(`歌手: ${singer.name} (ID: ${singer.id})`, 'success')
+                    })
+                }
+            } catch (err) {
+                log(`异常: ${err.message}`, 'error')
+            }
+        }
+
+        window.testSingers = testSingers
+
+        const testConcerts = async function() {
+            log('测试获取演唱会数据...', 'info')
+            try {
+                const { data, error } = await supabase.from('concerts').select('*, singers(name)')
+                
+                if (error) {
+                    log(`获取演唱会数据失败: ${error.message}`, 'error')
+                } else {
+                    log(`获取到 ${data.length} 条演唱会数据`, 'success')
+                    data.forEach(concert => {
+                        log(`演唱会: ${concert.title} - ${concert.singers?.name || '未知歌手'}`, 'success')
+                    })
+                }
+            } catch (err) {
+                log(`异常: ${err.message}`, 'error')
+            }
+        }
+
+        window.testConcerts = testConcerts
+
+        // 页面加载完成后自动测试
+        window.addEventListener('load', () => {
+            log('页面加载完成，可以开始测试', 'info')
+            log('点击按钮测试数据库连接', 'info')
+        })
+    </script>
+</body>
+</html>
