@@ -43,6 +43,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 渲染表格
         renderTable()
         
+        // 启用实时更新（监听数据库变化）
+        startRealTimeUpdates()
+        
         console.log('统计分析页面初始化完成')
     } catch (error) {
         console.error('统计分析页面初始化错误:', error)
@@ -517,5 +520,55 @@ function startRealTimeUpdates() {
         .subscribe()
 }
 
-// 开始实时更新（可选，可以根据需要启用）
-// startRealTimeUpdates()
+// 添加刷新按钮功能
+window.refreshStatsData = async function() {
+    try {
+        console.log('手动刷新统计数据...')
+        
+        // 重新加载数据
+        await loadAllData()
+        
+        // 重新计算统计数据
+        calculateStats()
+        
+        // 销毁旧图表并重新创建
+        if (ratingDistributionChart) {
+            ratingDistributionChart.destroy()
+            ratingDistributionChart = null
+        }
+        if (genreRatingChart) {
+            genreRatingChart.destroy()
+            genreRatingChart = null
+        }
+        if (topConcertsChart) {
+            topConcertsChart.destroy()
+            topConcertsChart = null
+        }
+        
+        // 重新初始化图表
+        initCharts()
+        
+        // 重新渲染表格
+        renderTable(document.getElementById('searchInput')?.value || '')
+        
+        console.log('统计数据刷新完成')
+        
+        // 显示成功提示
+        const alertDiv = document.createElement('div')
+        alertDiv.className = 'alert alert-success alert-dismissible fade show'
+        alertDiv.innerHTML = `
+            <i class="fas fa-check-circle me-2"></i>数据刷新成功！
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `
+        const container = document.querySelector('.container')
+        container.insertBefore(alertDiv, container.firstChild)
+        
+        setTimeout(() => {
+            alertDiv.remove()
+        }, 3000)
+        
+    } catch (error) {
+        console.error('刷新统计数据失败:', error)
+        showError('数据刷新失败，请检查控制台查看详细错误信息')
+    }
+}

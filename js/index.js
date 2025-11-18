@@ -293,5 +293,5 @@ async function refreshData() {
     }
 }
 
-// 开始实时更新（可选，可以根据需要启用）
-// startRealTimeUpdates()
+// 开始实时更新（监听数据库变化）
+startRealTimeUpdates()
